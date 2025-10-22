@@ -26,7 +26,10 @@ def get_access_token(username: str, api_key: str, client_id: str, client_secret:
         "client_id": client_id,
         "client_secret": client_secret,
     }
+    # Логи в терминал
+    print(f"AUTH REQUEST: POST {TOKEN_URL} data={payload}")
     resp = requests.post(TOKEN_URL, data=payload, timeout=30)
+    print(f"AUTH RESPONSE: status={resp.status_code} body={resp.text}")
     try:
         resp.raise_for_status()
     except requests.HTTPError:
@@ -63,7 +66,9 @@ def list_all_projects(access_token: str, per_page: int = 200) -> List[Dict[str, 
     result: List[Dict[str, Any]] = []
     while True:
         params = {"page": page, "per_page": per_page}
+        print(f"REQUEST: GET {CALL_PROJECTS_URL} params={params}")
         resp = requests.get(CALL_PROJECTS_URL, headers=headers, params=params, timeout=30)
+        print(f"RESPONSE: status={resp.status_code} body={resp.text}")
         if resp.status_code != 200:
             print(f"Ошибка при получении проектов: {resp.status_code} {resp.text}", file=sys.stderr)
             sys.exit(1)

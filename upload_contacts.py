@@ -30,7 +30,10 @@ def get_access_token(username: str, api_key: str, client_id: str, client_secret:
         "client_id": client_id,
         "client_secret": client_secret,
     }
+    # Логи запроса авторизации
+    print(f"AUTH REQUEST: POST {TOKEN_URL} data={payload}")
     resp = requests.post(TOKEN_URL, data=payload, timeout=30)
+    print(f"AUTH RESPONSE: status={resp.status_code} body={resp.text}")
     try:
         resp.raise_for_status()
     except requests.HTTPError:
@@ -62,31 +65,21 @@ def upload_contacts(project_id: str, phones: List[str], access_token: str) -> No
         if project_id:
             payload_with_project = dict(payload)
             payload_with_project["call_project_id"] = int(project_id) if project_id.isdigit() else project_id
+            print(f"REQUEST: POST {url} json={payload_with_project}")
             resp = requests.post(url, json=payload_with_project, headers=headers, timeout=60)
+            print(f"RESPONSE: status={resp.status_code} body={resp.text}")
             if resp.status_code in (200, 201):
                 continue
-            # Если проект закрыт/не существует — пробуем без привязки
-            if resp.status_code == 422 and "Проект не существует" in resp.text:
-                resp2 = requests.post(url, json=payload, headers=headers, timeout=60)
-                if resp2.status_code in (200, 201):
-                    print(f"Лид для {phone} создан без привязки к проекту (исходный проект недоступен).")
-                    continue
-                print(
-                    f"Ошибка при создании лида для {phone}: {resp2.status_code} {resp2.text}",
-                    file=sys.stderr,
-                )
-                sys.exit(1)
             print(
-                f"Ошибка при создании лида для {phone}: {resp.status_code} {resp.text}",
+                f"Не удалось привязать лид {phone} к проекту {project_id}: {resp.status_code} {resp.text}",
                 file=sys.stderr,
             )
+            print("Лид не создан, так как создание без привязки к проекту отключено.", file=sys.stderr)
             sys.exit(1)
 
-        # Если project_id не указан — сразу создаем без привязки
-        resp = requests.post(url, json=payload, headers=headers, timeout=60)
-        if resp.status_code not in (200, 201):
-            print(f"Ошибка при создании лида для {phone}: {resp.status_code} {resp.text}", file=sys.stderr)
-            sys.exit(1)
+        # Если project_id не указан — прерываем (запрещено создавать без проекта)
+        print("project_id не указан — создание лидов без привязки к проекту отключено.", file=sys.stderr)
+        sys.exit(1)
     print("Лиды успешно созданы и привязаны к проекту.")
 
 
@@ -97,13 +90,14 @@ def main() -> None:
     api_key = get_required_env("SKOROZVON_API_KEY")
     client_id = get_required_env("SKOROZVON_APP_ID")
     client_secret = get_required_env("SKOROZVON_APP_KEY")
-    project_id = get_required_env("SKOROZVON_PROJECT_ID")
+
+    # Укажите ID проекта Скорозвон, в который загружать номера
+    project_id = "194408"
 
     token = get_access_token(username, api_key, client_id, client_secret)
 
     test_phones = [
         "+79991234567",
-        "+79997654321",
     ]
     upload_contacts(project_id, test_phones, token)
 
