@@ -96,11 +96,17 @@ def main() -> None:
         print("Проекты не найдены.")
         return
 
-    print("Список проектов (id — имя):")
+    print("Список проектов (id — имя — статус):")
     for p in projects:
         pid = p.get("id", p.get("uuid", "?"))
         name = get_display_name(p)
-        print(f"{pid} — {name}")
+        state = p.get("state") or "?"
+        substate = p.get("substate") or ""
+        if substate:
+            status = f"{state} / {substate}"
+        else:
+            status = state
+        print(f"{pid} — {name} — {status}")
 
 
 if __name__ == "__main__":
