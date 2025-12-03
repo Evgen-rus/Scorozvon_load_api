@@ -1,6 +1,7 @@
 # Credentials and environment
 credentials/
 .env
+old.env
 *.json
 
 # Logs

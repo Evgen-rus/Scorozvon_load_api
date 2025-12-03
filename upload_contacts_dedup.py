@@ -125,11 +125,16 @@ def upload_contacts_dedup(project_id: str, phones: List[str], access_token: str)
             skipped_count += 1
             continue
 
+        # Извлекаем номер телефона без плюса для названия
+        phone_for_name = phone.lstrip("+")
+
         payload = {
             "type": "Lead",
-            "name": f"Тестовый лид {phone}",
+            "name": phone_for_name,  # Только номер телефона
             "phones": [phone if phone.startswith("+") else f"+{phone}"],
             "call_project_id": int(project_id) if project_id.isdigit() else project_id,
+            "comment": "Аквилон_новые номера",  # Описание
+            "tags": ["столица_перехват"],  # Теги
         }
         print(f"REQUEST: POST {url} json={payload}")
         resp = requests.post(url, json=payload, headers=headers, timeout=60)
@@ -155,7 +160,7 @@ def main() -> None:
     client_secret = get_required_env("SKOROZVON_APP_KEY")
 
     # Используйте ваш проект
-    project_id = "194408"
+    project_id = "196155"
 
     token = get_access_token(username, api_key, client_id, client_secret)
 
