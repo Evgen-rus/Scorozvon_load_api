@@ -63,7 +63,7 @@ def get_display_name(project: Dict[str, Any]) -> str:
     return "(без названия)"
 
 
-def list_all_projects(access_token: str, per_page: int = 200) -> List[Dict[str, Any]]:
+def list_all_projects(access_token: str, per_page: int = 10) -> List[Dict[str, Any]]:
     """Получение всех проектов с пагинацией."""
     headers = {"Authorization": f"Bearer {access_token}"}
     page = 1
