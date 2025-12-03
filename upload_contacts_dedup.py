@@ -130,7 +130,7 @@ def upload_contacts_dedup(project_id: str, phones: List[str], access_token: str)
 
         payload = {
             "type": "Lead",
-            "name": phone_for_name,  # Только номер телефона
+            "name": "ФИО не указано",
             "phones": [phone if phone.startswith("+") else f"+{phone}"],
             "call_project_id": int(project_id) if project_id.isdigit() else project_id,
             "comment": "Аквилон_новые номера",  # Описание
