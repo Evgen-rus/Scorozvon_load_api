@@ -80,18 +80,20 @@ def phones_equal(a: str, b: str) -> bool:
 def lead_exists_in_project(project_id: str, phone: str, headers: Dict[str, str]) -> bool:
     base_leads = "https://api.skorozvon.ru/api/v2/leads"
 
-    # Стратегия: листаем лиды проекта и проверяем телефоны на точное совпадение (по цифрам/последним 10)
-    page = 1
+    # Стратегия: для ускорения проверяем ТОЛЬКО последние несколько страниц проекта,
+    # считая, что новые лиды находятся в конце.
     per_page = 200
-    while True:
+
+    def page_has_phone(page: int) -> bool:
+        """Проверка, есть ли номер на конкретной странице лидов."""
         params = {"call_project_id": project_id, "page": page, "per_page": per_page}
         print(f"REQUEST: GET {base_leads} params={params}")
         resp = requests.get(base_leads, headers=headers, params=params, timeout=30)
         print(f"RESPONSE: status={resp.status_code} body={resp.text}")
         if resp.status_code != 200:
-            break
-        items = extract_list(resp.json())
-        # Проверяем телефоны в каждом лидe
+            return False
+        data = resp.json()
+        items = extract_list(data)
         for item in items:
             candidates: List[str] = []
             if isinstance(item.get("phones"), str):
@@ -101,10 +103,35 @@ def lead_exists_in_project(project_id: str, phone: str, headers: Dict[str, str])
             for cand in candidates:
                 if phones_equal(cand, phone):
                     return True
-        # Пагинация
-        if not items or len(items) < per_page:
-            break
-        page += 1
+        return False
+
+    # Сначала делаем один запрос, чтобы узнать общее количество страниц
+    params_first = {"call_project_id": project_id, "page": 1, "per_page": per_page}
+    print(f"REQUEST: GET {base_leads} params={params_first}")
+    resp_first = requests.get(base_leads, headers=headers, params=params_first, timeout=30)
+    print(f"RESPONSE: status={resp_first.status_code} body={resp_first.text}")
+    if resp_first.status_code != 200:
+        return False
+    data_first = resp_first.json()
+    pagination = data_first.get("pagination") or {}
+    total_pages = pagination.get("total_pages") or 1
+
+    # Если страниц мало — проверяем все, если много — только последние 5
+    if total_pages <= 5:
+        # Используем уже полученную первую страницу
+        if page_has_phone(1):
+            return True
+        for page in range(2, total_pages + 1):
+            if page_has_phone(page):
+                return True
+        return False
+
+    # Берём последние 5 страниц: total_pages, total_pages-1, ...,
+    # потому что новые лиды обычно в конце.
+    start_page = max(1, total_pages - 5 + 1)
+    for page in range(start_page, total_pages + 1):
+        if page_has_phone(page):
+            return True
     return False
 
 
@@ -133,7 +160,7 @@ def upload_contacts_dedup(project_id: str, phones: List[str], access_token: str)
             "name": "ФИО не указано",
             "phones": [phone if phone.startswith("+") else f"+{phone}"],
             "call_project_id": int(project_id) if project_id.isdigit() else project_id,
-            "comment": "Аквилон_новые номера",  # Описание
+            "comment": "Тест интеграции",  # Описание
             "tags": ["столица_перехват"],  # Теги
         }
         print(f"REQUEST: POST {url} json={payload}")
@@ -160,13 +187,12 @@ def main() -> None:
     client_secret = get_required_env("SKOROZVON_APP_KEY")
 
     # Используйте ваш проект
-    project_id = "196155"
+    project_id = "30000191458"   #Северная Столица (перехват) 
 
     token = get_access_token(username, api_key, client_id, client_secret)
 
     test_phones = [
-        "+79991234567",
-        "+79997654321",
+        "+79231920440",
     ]
     upload_contacts_dedup(project_id, test_phones, token)
 
