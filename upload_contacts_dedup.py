@@ -187,7 +187,8 @@ def main() -> None:
     client_secret = get_required_env("SKOROZVON_APP_KEY")
 
     # Используйте ваш проект
-    project_id = "30000191458"   #Северная Столица (перехват) 
+    # project_id = "30000191458"   #Северная Столица (перехват) 
+    project_id = "196155"
 
     token = get_access_token(username, api_key, client_id, client_secret)
 
