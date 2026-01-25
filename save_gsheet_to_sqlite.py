@@ -1,4 +1,5 @@
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import os
 import random
 import re
@@ -29,11 +30,32 @@ MAX_API_RETRIES = 4
 API_RETRY_BACKOFF_SECONDS = 1.0
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
+LOG_DIR = "logs"
+LOG_FILE = os.path.join(LOG_DIR, "save_gsheet_to_sqlite.log")
+
+os.makedirs(LOG_DIR, exist_ok=True)
+
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+file_handler = TimedRotatingFileHandler(
+    LOG_FILE,
+    when="midnight",
+    backupCount=7,
+    encoding="utf-8",
+)
+file_handler.setFormatter(
+    logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+)
+
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(
+    logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+)
+
+logger.handlers.clear()
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
 
 
 def get_env_required(name: str) -> str:
