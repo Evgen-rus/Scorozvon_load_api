@@ -1,3 +1,40 @@
+## ⚡ Быстрый старт (установка и расписание)
+1. Клонировать репозиторий:
+   ```bash
+   git clone https://github.com/Evgen-rus/Scorozvon_load_api.git
+   cd Scorozvon_load_api
+   ```
+2. Создать и активировать виртуальное окружение:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   ```
+3. Установить зависимости:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Создать папку credentional/ и положить в нее файл sheets-data-bot-b8f4cc6634fc.json
+
+5. Создать файл `.env`:
+   ```env
+   SKOROZVON_LOGIN=ваш_email@domain.ru
+   SKOROZVON_API_KEY=ваш_api_ключ
+   SKOROZVON_APP_ID=ваш_app_id
+   SKOROZVON_APP_KEY=ваш_app_secret
+   GOOGLE_CREDENTIALS_FILE=credentials/sheets-data-bot-b8f4cc6634fc.json
+   GOOGLE_SHEET_ID=
+   ```
+5. Настроить расписание cron (MSK), добавить в `crontab -e`:
+   ```bash
+   crontab -e
+   ```
+   ```
+   # ==== SCOROZVON_LOAD_API SCHEDULE ====
+   CRON_TZ=Europe/Moscow
+   33 8-17 * * * cd /opt/Scorozvon_load_api && /opt/Scorozvon_load_api/venv/bin/python 1_save_gsheet_to_sqlite.py >/dev/null 2>> /opt/Scorozvon_load_api/logs/cron_save_gsheet.log
+   35 8-17 * * * cd /opt/Scorozvon_load_api && /opt/Scorozvon_load_api/venv/bin/python 2_upload_missing_leads_from_db.py >/dev/null 2>> /opt/Scorozvon_load_api/logs/cron_upload_missing.log
+   ```
+
 ## 📋 Описание проекта
 
 Этот проект содержит скрипты для работы с API сервиса **Скорозвон** (автоматизированные звонки). Все скрипты написаны на Python и используют библиотеку `requests` для HTTP-запросов.
